@@ -118,7 +118,8 @@ ISR(USART_RXC_vect)
 	recivedBuff[usartRxCounter] = UDR;
 	
 	if(recivedBuff[usartRxCounter] == '\n'){
-		recivedBuff[++usartRxCounter] = '\0';
+		//recivedBuff[++usartRxCounter] = '\0';
+		recivedBuff[--usartRxCounter] = '\0';
 		newLine = true;
 		usartRxCounter = 0;
 	}else{

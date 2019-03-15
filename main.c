@@ -10,6 +10,7 @@
 #include "defines.h"
 #include "DHT11Lib.h"
 #include "uart.h"
+#include "config.h"
 #include <util/delay.h>
 #include <string.h>
 #include <stdlib.h>
@@ -24,11 +25,33 @@ int main(void)
 	
 	init();	
 	sendLine("Hello");
+	
+	sprintf(resultText, "change?: %u", isWiFiConfigChanged());
+	sendLine(resultText);
+	
+	getSSID(resultText, sizeof resultText / sizeof *resultText);
+	sendLine(resultText);
+	
+	getWiFiPassword(resultText, sizeof resultText / sizeof *resultText);
+	sendLine(resultText);
+	
+	getHost(resultText, sizeof resultText / sizeof *resultText);
+	sendLine(resultText);
+	
+	sprintf(resultText, "port: %u", getPort());
+	sendLine(resultText);
+
+	getTopic(resultText, sizeof resultText / sizeof *resultText);
+	sendLine(resultText);	
+	
+	sprintf(resultText, "period: %u", getPeriod());
+	sendLine(resultText);
+	
     while (1) 
     {
 		readLine(recivedText, sizeof recivedText / sizeof *recivedText);
 		sendLine(recivedText);
-		if(strcmp(recivedText, "cucumber\r\n") == 0){
+		if(strcmp(recivedText, "cucumber") == 0){
 			DHT11_readData();
 			sprintf(resultText, "%d.%d *C %d.%d hr [%%]",
 				DHT11_getTempInt(),
@@ -37,8 +60,54 @@ int main(void)
 				DHT11_getRHDeci());
 			
 			sendLine(resultText);	
-		}else{
-			sendLine("Nope");	
+		}
+		
+		if (strcmp(recivedText, "ssid") == 0)
+		{
+			sendLine(">");
+			readLine(recivedText, sizeof recivedText / sizeof *recivedText);
+			setSSID(recivedText, sizeof recivedText / sizeof *recivedText);
+			sendLine("ok");
+		}
+		
+		if (strcmp(recivedText, "pass") == 0)
+		{
+			sendLine(">");
+			readLine(recivedText, sizeof recivedText / sizeof *recivedText);
+			setWiFiPassword(recivedText, sizeof recivedText / sizeof *recivedText);
+			sendLine("ok");
+		}
+		
+		if (strcmp(recivedText, "host") == 0)
+		{
+			sendLine(">");
+			readLine(recivedText, sizeof recivedText / sizeof *recivedText);
+			setHost(recivedText, sizeof recivedText / sizeof *recivedText);
+			sendLine("ok");
+		}
+		
+		if (strcmp(recivedText, "port") == 0)
+		{
+			sendLine(">");
+			readLine(recivedText, sizeof recivedText / sizeof *recivedText);
+			setPort(atoi(recivedText));
+			sendLine("ok");
+		}
+		
+		if (strcmp(recivedText, "topic") == 0)
+		{
+			sendLine(">");
+			readLine(recivedText, sizeof recivedText / sizeof *recivedText);
+			setTopic(recivedText, sizeof recivedText / sizeof *recivedText);
+			sendLine("ok");
+		}
+		
+		if (strcmp(recivedText, "period") == 0)
+		{
+			sendLine(">");
+			readLine(recivedText, sizeof recivedText / sizeof *recivedText);
+			setPeriod(atoi(recivedText));
+			sendLine("ok");
 		}
     }
 }
