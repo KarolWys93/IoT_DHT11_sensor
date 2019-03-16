@@ -7,11 +7,12 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <util/atomic.h>
 #include "defines.h"
 #include "DHT11Lib.h"
 #include "uart.h"
 #include "config.h"
-#include <util/delay.h>
+#include "hw_delay.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -52,7 +53,14 @@ int main(void)
 		readLine(recivedText, sizeof recivedText / sizeof *recivedText);
 		sendLine(recivedText);
 		if(strcmp(recivedText, "cucumber") == 0){
-			DHT11_readData();
+			uint32_t t1 = getCurrentTime();
+			hw_sleep_ms(1000);
+			uint32_t t2 = getCurrentTime();
+			sprintf(resultText, "t1: %lu t2: %lu", t1, t2);
+			sendLine(resultText);
+			ATOMIC_BLOCK(ATOMIC_FORCEON){
+				DHT11_readData();
+			}		
 			sprintf(resultText, "%d.%d *C %d.%d hr [%%]",
 				DHT11_getTempInt(),
 				DHT11_getTempDeci(),
@@ -116,6 +124,6 @@ int main(void)
 static void init(void){
 	DHT11_init();
 	usartInit();
-	
+	hw_delay_init();
 	sei();
 }

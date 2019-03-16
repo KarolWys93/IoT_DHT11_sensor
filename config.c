@@ -18,7 +18,7 @@ EEMEM char password_eeprom[WIFI_CONF_BUFFER_SIZE] = "";
 
 EEMEM char host_eeprom[CONNECTION_CONF_BUFFER_SIZE] = "";
 EEMEM char topic_eeprom[CONNECTION_CONF_BUFFER_SIZE] = "";
-EEMEM uint16_t port_eeprom = 443;
+EEMEM uint16_t port_eeprom = 1883;
 
 EEMEM uint16_t period_eeprom = 1000;
 
