@@ -37,11 +37,10 @@ void hw_sleep_ms(uint32_t delay_time){
 }
 
 void hw_sleep(uint8_t sleep_mode){
-	MCUCR |= (sleep_mode << SM0);
-	MCUCR |= (1<<SE);
+	MCUCR |= (1<<SE) | (sleep_mode << SM0);
 	asm volatile("SLEEP");
 	asm volatile("NOP");
-	MCUCR &= ~((1<<SE) | (1<<SM0) | (1<<SM1));
+	MCUCR &= ~((1<<SE) | (1<<SM0) | (1<<SM1) | (1<<SM2));
 }
 
 ISR(INT_VECTOR){

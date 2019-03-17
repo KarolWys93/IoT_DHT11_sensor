@@ -8,18 +8,17 @@
 #include "DHT11Lib.h"
 #include <util/delay.h>
 
+
 // IN/OUT macros
-#define DHT11_OUT() (DHT11_DDR |= (1<<DHT11_PIN))
-#define DHT11_IN() (DHT11_DDR &= ~(1<<DHT11_PIN))
+#define DHT11_OUT() SET(DDR, DHT11_line)
+#define DHT11_IN() CLR(DDR, DHT11_line)
 
 // High/Low macros
-#define DHT11_HIGH() (DHT11_PORT |= (1<<DHT11_PIN))
-#define DHT11_LOW() (DHT11_PORT &= ~(1<<DHT11_PIN))
+#define DHT11_HIGH() SET(PORT, DHT11_line)
+#define DHT11_LOW() CLR(PORT, DHT11_line)
 
 //read pin state
-#define  DHT11_LineState() (DHT11_PINREG & (1<<DHT11_PIN))
-
-
+#define  DHT11_LineState() GET(DHT11_line)
 
 //Data buffer
 uint8_t DHT11_dataBuffer[5];

@@ -20,7 +20,7 @@ void setRxBuffer(char* buffer, uint16_t len);
 bool uartTxIsBusy(void);
 
 void sendLine(char *text);
-void sendData(char *text);
+void sendData(char *text, uint8_t len);
 
 char readChar(void);
 void readLine(char *buffer, uint16_t len);

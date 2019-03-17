@@ -9,12 +9,13 @@
 #ifndef DEFINES_H_
 #define DEFINES_H_
 
+#include "single_bit_io.h"
 
-//You have to modified this part.
-#define	DHT11_PIN PINC5
-#define DHT11_PINREG PINC
-#define DHT11_PORT PORTC
-#define DHT11_DDR DDRC
 
+//DHT11 hardware config
+#define  DHT11_line C, 5
+
+//WiFi module enable pin
+#define  WiFi_enable_pin D, 2
 
 #endif /* DEFINES_H_ */

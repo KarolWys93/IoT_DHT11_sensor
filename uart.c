@@ -6,15 +6,17 @@
  */ 
 
 #include "uart.h"
+#include "hw_delay.h"
 #include <avr/interrupt.h>
 #include <stddef.h>
 #include <util/atomic.h>
-#include <util/delay.h>
+#include <string.h>
 
 volatile static unsigned int usartRxCounter;
 volatile static unsigned int usartRxBuffLen;
 
-static char* toSend;
+static char* toSendData;
+static uint8_t toSendLen = 0;
 static  char* recivedBuff;
 
 volatile static bool uartTxBusy = false;
@@ -53,15 +55,16 @@ bool uratTxIsBusy(void){
 
 
 void sendLine(char *text){
-	sendData(text);
+	sendData(text, strlen(text));
 	while(uartTxBusy);
-	sendData("\r\n");
+	sendData("\r\n", 2);
 }
 
-void sendData(char *text){
+void sendData(char *text, uint8_t len){
 	//Zaczekaj, az bufor nadawania bedzie pusty
 	while (!(UCSRA & (1 << UDRE)));
-	toSend = text;
+	toSendData = text;
+	toSendLen = len;
 	uartTxBusy = true;
 	//rozpoczêcie transmisji
 	UCSRB |= (1 << UDRIE);
@@ -75,7 +78,7 @@ void setRxBuffer(char* buffer, uint16_t len){
 void readLine(char* buffer, uint16_t len){
 	setRxBuffer(buffer, len);
 	while(!recivedNewLine()){
-		_delay_ms(1);
+		hw_delay_ms(1);
 	}
 	setRxBuffer(NULL, 0);
 }
@@ -88,7 +91,7 @@ char readChar(){
 
 bool recivedNewLine(void){
 	bool tmp = false;
-	ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
+	ATOMIC_BLOCK(ATOMIC_FORCEON){
 		tmp = newLine;
 		newLine = false;
 	}
@@ -98,9 +101,10 @@ bool recivedNewLine(void){
 ISR(USART_UDRE_vect)
 {
 	//sprawdzamy, wyslany bajt jest znakiem konca tesktu
-	if (*toSend != '\0'){
-		UDR = *toSend;
-		toSend++;
+	if (toSendLen != 0){
+		UDR = *toSendData;
+		toSendData++;
+		toSendLen--;
 	}else{
 		uartTxBusy = false;
 		UCSRB &= ~(1 << UDRIE); //wylacz przerwania pustego bufora nadawania
