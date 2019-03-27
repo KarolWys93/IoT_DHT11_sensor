@@ -6,6 +6,7 @@
  */ 
 
 #include "uart.h"
+#include "defines.h"
 #include "hw_delay.h"
 #include <avr/interrupt.h>
 #include <stddef.h>
@@ -16,7 +17,7 @@ volatile static unsigned int usartRxCounter;
 volatile static unsigned int usartRxBuffLen;
 
 static char* toSendData;
-static uint8_t toSendLen = 0;
+volatile static uint8_t toSendLen = 0;
 static  char* recivedBuff;
 
 volatile static bool uartTxBusy = false;
@@ -25,7 +26,6 @@ volatile static bool newLine = false;
 void usartInit(void)
 {
 	// ustawienie transmisji
-	#define BAUD 9600        //9600bps standardowa predkosc transmisji modulu HC-05
 	#include <util/setbaud.h> //linkowanie tego pliku musi byæ
 	//po zdefiniowaniu BAUD
 

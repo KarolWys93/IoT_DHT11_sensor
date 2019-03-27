@@ -13,14 +13,14 @@
 
 /* Default values */
 EEMEM uint8_t configChange = 1;
-EEMEM char ssid_eeprom[WIFI_CONF_BUFFER_SIZE] = "";
+EEMEM char ssid_eeprom[WIFI_CONF_BUFFER_SIZE] = "wifi_name";
 EEMEM char password_eeprom[WIFI_CONF_BUFFER_SIZE] = "";
 
-EEMEM char host_eeprom[CONNECTION_CONF_BUFFER_SIZE] = "";
-EEMEM char topic_eeprom[CONNECTION_CONF_BUFFER_SIZE] = "";
+EEMEM char host_eeprom[CONNECTION_CONF_BUFFER_SIZE] = "host.example.com";
+EEMEM char topic_eeprom[CONNECTION_CONF_BUFFER_SIZE] = "topic/example";
 EEMEM uint16_t port_eeprom = 1883;
 
-EEMEM uint16_t period_eeprom = 1000;
+EEMEM uint16_t period_eeprom = 2;
 
 
 /* WIFI config */

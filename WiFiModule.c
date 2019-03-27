@@ -7,26 +7,18 @@
 
 #include "WiFiModule.h"
 #include "uart.h"
-#include "hw_delay.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
 
 //private variables
 static char wifi_cmdBuffer[64];
-static uint32_t tickstart = 0;
-static uint32_t timeoutValue = 0;
-
-//private functions prototypes
-static void WiFi_TimeoutSet(uint32_t);
-static bool WiFi_TimeoutCheck(void);
 
 
-WiFI_Status WiFi_reset(uint16_t timeout){
+WiFI_Status WiFi_reset(){
 	WiFI_Status status = WiFi_ERROR;
-	WiFi_TimeoutSet(timeout);
 	sendLine("AT+RST");
-	while(!WiFi_TimeoutCheck()){
+	while(1){
 		readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer);
 		if(strcmp(wifi_cmdBuffer, "ready") == 0){
 			status = WiFi_OK;
@@ -162,19 +154,7 @@ WiFI_Status WiFi_sendData(char* data, uint16_t dataLength){
 
 	return status;
 }
-uint16_t WiFi_readData(char* data, uint16_t bufferLen, uint32_t timeout);
-
-
-static void WiFi_TimeoutSet(uint32_t timeout){
-	timeoutValue = timeout;
-	tickstart = getCurrentTime();
-}
-
-static bool WiFi_TimeoutCheck(void){
-	if(getCurrentTime() - tickstart >= timeoutValue){
-		return true;
-	}else{
-		return false;
-	}
+uint16_t WiFi_readData(char* data, uint16_t bufferLen, uint32_t timeout){
+	return 15;
 }
 
