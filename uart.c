@@ -13,15 +13,15 @@
 #include <util/atomic.h>
 #include <string.h>
 
-volatile static unsigned int usartRxCounter;
-volatile static unsigned int usartRxBuffLen;
-
 static char* toSendData;
 volatile static uint8_t toSendLen = 0;
-static  char* recivedBuff;
-
 volatile static bool uartTxBusy = false;
-volatile static bool newLine = false;
+
+volatile static char dumbByte = '\0';
+volatile static uint16_t usartRxCounter;
+volatile static uint16_t usartRxBuffLen;
+static char* recivedBuff;
+
 
 void usartInit(void)
 {
@@ -53,7 +53,6 @@ bool uratTxIsBusy(void){
 	return uartTxBusy;
 }
 
-
 void sendLine(char *text){
 	sendData(text, strlen(text));
 	while(uartTxBusy);
@@ -70,32 +69,77 @@ void sendData(char *text, uint8_t len){
 	UCSRB |= (1 << UDRIE);
 }
 
-void setRxBuffer(char* buffer, uint16_t len){
-	usartRxBuffLen = len;
-	recivedBuff = buffer;
+
+static void setRxBuffer(char* buffer, uint16_t len){
+	ATOMIC_BLOCK(ATOMIC_FORCEON){
+		recivedBuff = buffer;
+		usartRxBuffLen = len;
+		usartRxCounter = 0;
+	}
 }
 
-void readLine(char* buffer, uint16_t len){
+uint16_t readLine(char* buffer, uint16_t len, uint16_t timeout){
+	uint32_t startTime = getCurrentTime();
+	uint16_t end_byte = 0;
+	uint16_t start_byte = 0;
+	uint8_t receiving = 1;
+	
 	setRxBuffer(buffer, len);
-	while(!recivedNewLine()){
-		hw_delay_ms(1);
+	while(receiving){
+		hw_sleep(sleep_Idle);
+		if (timeout > 0 && (getCurrentTime() - startTime) > timeout )
+		{
+			setRxBuffer(NULL, 0);
+			return 0;
+		}
+		//start_byte = end_byte;
+		ATOMIC_BLOCK(ATOMIC_FORCEON){
+			end_byte = usartRxCounter;
+		}
+		
+		for (uint16_t i = start_byte; i < end_byte; i++)
+		{
+			if(recivedBuff[i] == '\n'){
+				recivedBuff[i-1] = '\0';
+				receiving = 0;
+			}
+		}
+		
+		if(end_byte >= usartRxBuffLen-1){
+			recivedBuff[usartRxBuffLen-1] = '\0';
+			receiving = 0;
+		}
 	}
 	setRxBuffer(NULL, 0);
+	return end_byte;
 }
 
-char readChar(){
-		char buffer[2] = {'\0', '\0'};
-		readLine(buffer, 2);
-		return buffer[0];
-}
-
-bool recivedNewLine(void){
-	bool tmp = false;
-	ATOMIC_BLOCK(ATOMIC_FORCEON){
-		tmp = newLine;
-		newLine = false;
+char readChar(uint16_t timeout){
+	char receivedChar = '\0';
+	if (readData(&receivedChar, 1, timeout) == 0)
+	{
+		return 0;
 	}
-	return tmp;
+	return receivedChar;
+}
+
+uint16_t readData(char* buffer, uint16_t len, uint16_t timeout){
+	uint32_t startTime = getCurrentTime();
+	uint16_t receivedBytesCount = 0;
+	setRxBuffer(buffer, len);
+	while(receivedBytesCount < len ){
+		hw_sleep(sleep_Idle);
+		if (timeout > 0 && (getCurrentTime() - startTime) > timeout )
+		{
+			setRxBuffer(NULL, 0);
+			return 0;
+		}
+		ATOMIC_BLOCK(ATOMIC_FORCEON){
+			receivedBytesCount = usartRxCounter;
+		}
+	}
+	setRxBuffer(NULL, 0);
+	return receivedBytesCount;
 }
 
 ISR(USART_UDRE_vect)
@@ -113,27 +157,11 @@ ISR(USART_UDRE_vect)
 
 ISR(USART_RXC_vect)
 {
-	if (recivedBuff == NULL)
+	if (usartRxCounter >= usartRxBuffLen)
 	{
-		char tmp = UDR;
+		dumbByte = UDR;
 		return;
 	}
 	
-	recivedBuff[usartRxCounter] = UDR;
-	
-	if(recivedBuff[usartRxCounter] == '\n'){
-		//recivedBuff[++usartRxCounter] = '\0';
-		recivedBuff[--usartRxCounter] = '\0';
-		newLine = true;
-		usartRxCounter = 0;
-	}else{
-		usartRxCounter++;
-	}
-	
-	
-	if(usartRxCounter >= usartRxBuffLen-1){
-		recivedBuff[usartRxCounter] = '\0';
-		usartRxCounter = 0;
-		newLine = true;
-	}
+	recivedBuff[usartRxCounter++] = UDR;	
 }

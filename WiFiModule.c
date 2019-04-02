@@ -19,7 +19,7 @@ WiFI_Status WiFi_reset(){
 	WiFI_Status status = WiFi_ERROR;
 	sendLine("AT+RST");
 	while(1){
-		readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer);
+		readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000);
 		if(strcmp(wifi_cmdBuffer, "ready") == 0){
 			status = WiFi_OK;
 			break;
@@ -38,7 +38,7 @@ WiFI_Status WiFi_SetNetwork(char* SSID, char* password){
 	strcat(wifi_cmdBuffer, "\"");
 
 	sendLine(wifi_cmdBuffer);
-	readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer/sizeof *wifi_cmdBuffer);
+	readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer/sizeof *wifi_cmdBuffer, 10000);
 	
 	if (strcmp(wifi_cmdBuffer, "OK") == 0)
 	{
@@ -54,7 +54,7 @@ WiFI_Status WiFi_checkAPconnection(){
 
 	sendLine("AT+CWJAP?");
 	do{
-		readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer);
+		readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000);
 		if(strcmp(wifi_cmdBuffer, "OK") == 0){
 			waitForAnswer = false;
 			status = WiFi_OK;
@@ -79,7 +79,7 @@ WiFI_Status WiFi_openConnection(char* adress, uint16_t port){
 
 		sendLine(wifi_cmdBuffer);
 		do{
-			readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer);
+			readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000);
 			if(strcmp(wifi_cmdBuffer, "OK") == 0){
 				waitForAnswer = false;
 				status = WiFi_OK;
@@ -107,7 +107,7 @@ WiFI_Status WiFi_closeConnection(){
 
 	sendLine("AT+CIPCLOSE");
 	do{
-		readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer);
+		readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000);
 		if(strcmp(wifi_cmdBuffer, "OK") == 0){
 			waitForAnswer = false;
 			status = WiFi_OK;
@@ -129,25 +129,21 @@ WiFI_Status WiFi_sendData(char* data, uint16_t dataLength){
 	sendLine(wifi_cmdBuffer);
 
 	do{
-		sign = readChar();
+		sign = readChar(0);
 		if(sign == '>'){
-
 			sendData(data, dataLength);
-
 			do{
-
-				readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer);
+				readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000);	//TODO add timeout
 				if(strcmp(wifi_cmdBuffer, "SEND OK") == 0){
 					waitForAnswer = false;
 					status = WiFi_OK;
-					}else{
+				}else{
 					waitForAnswer = false;
 				}
 			}while(waitForAnswer);
-
 			status = WiFi_OK;
 			waitForAnswer = false;
-			}else if(sign == 'l'){
+		}else if(sign == 'l'){
 			waitForAnswer = false;
 		}
 	}while(waitForAnswer);

@@ -21,15 +21,15 @@ uint32_t getCurrentTime(void){
 
 void hw_delay_ms(uint32_t delay_time){
 	//Zerowanie preskalera?
-	uint32_t endTime = getCurrentTime() + delay_time;
-	while (time != endTime);
+	uint32_t startTime = getCurrentTime();
+	while((getCurrentTime() - startTime) < delay_time );
 }
 
 void hw_sleep_ms(uint32_t delay_time){
 	
-	uint32_t endTime = getCurrentTime() + delay_time;
+	uint32_t startTime = getCurrentTime();
 	MCUCR |= (1<<SE);
-	while (getCurrentTime() != endTime){
+	while((getCurrentTime() - startTime) < delay_time ){	
 		asm volatile("SLEEP");
 		asm volatile("NOP");
 	};

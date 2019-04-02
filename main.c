@@ -29,7 +29,7 @@ int main(void){
 	
 	char recivedText[64];
 	char resultText[64];
-	
+
 	WiFi_enable();
 	hw_sleep_ms(500);
 	WiFi_reset();

@@ -15,18 +15,15 @@
 
 
 void usartInit(void);
-void setRxBuffer(char* buffer, uint16_t len);
 
 bool uartTxIsBusy(void);
 
 void sendLine(char *text);
 void sendData(char *text, uint8_t len);
 
-char readChar(void);
-void readLine(char *buffer, uint16_t len);
-
-bool recivedNewLine(void);
-
+char readChar(uint16_t timeout);
+uint16_t readLine(char *buffer, uint16_t len, uint16_t timeout);
+uint16_t readData(char *buffer, uint16_t len, uint16_t timeout);
 
 
 #endif /* UART_H_ */
