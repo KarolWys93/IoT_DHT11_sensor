@@ -26,7 +26,7 @@ typedef enum
 
 }WiFI_Status;
 
-WiFI_Status WiFi_reset();
+WiFI_Status WiFi_reset(uint32_t timeout);
 
 WiFI_Status WiFi_SetNetwork(char* SSID, char* password);
 WiFI_Status WiFi_checkAPconnection();

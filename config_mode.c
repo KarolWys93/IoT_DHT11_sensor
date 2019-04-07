@@ -8,7 +8,7 @@
 #include "config_mode.h"
 #include <avr/io.h>
 #include "uart.h"
-#include "config.h"
+#include "settings.h"
 #include "single_bit_io.h"
 #include <stdbool.h>
 #include <string.h>

@@ -11,7 +11,7 @@
 #include "defines.h"
 #include "DHT11Lib.h"
 #include "uart.h"
-#include "config.h"
+#include "settings.h"
 #include "hw_delay.h"
 #include "WiFiModule.h"
 #include "single_bit_io.h"
@@ -29,10 +29,33 @@ int main(void){
 	
 	char recivedText[64];
 	char resultText[64];
-
+	
 	WiFi_enable();
 	hw_sleep_ms(500);
-	WiFi_reset();
+	WiFi_reset(5000);
+	hw_sleep_ms(5000);
+	while(1){
+		if(WiFi_checkAPconnection() == WiFi_OK){
+			strcpy(resultText, "GET / HTTP/1.1\r\nHost: jakitydzien.pl\r\n\r\n");
+			WiFI_Status conn_status = WiFi_openConnection("jakitydzien.pl", 80);
+			if (conn_status != WiFi_OK)
+			{
+				sendLine("kupa2");
+			}else{
+				WiFi_sendData(resultText, strlen(resultText));
+				WiFi_readData(recivedText, sizeof recivedText/sizeof *recivedText, 10000);
+				WiFi_closeConnection();
+			}
+		}else{
+			sendLine("kupa");
+		}
+		hw_sleep_ms(60000);
+	}
+	
+	
+	
+	
+	
 	
     while (1){
 		hw_sleep_ms(1000*getPeriod());

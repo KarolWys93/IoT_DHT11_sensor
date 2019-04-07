@@ -1,13 +1,13 @@
 /*
- * config.h
+ * settings.h
  *
  * Created: 14.03.2019 22:18:58
  *  Author: Karol
  */ 
 
 
-#ifndef CONFIG_H_
-#define CONFIG_H_
+#ifndef SETTINGS_H_
+#define SETTINGS_H_
 
 #include <avr/io.h>
 
@@ -32,4 +32,4 @@ void setTopic(char* topicBuffer, uint8_t len);
 uint16_t getPeriod();
 void setPeriod(uint16_t period);
 
-#endif /* CONFIG_H_ */
+#endif /* SETTINGS_H_ */

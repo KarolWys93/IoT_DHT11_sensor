@@ -1,11 +1,11 @@
 /*
- * config.c
+ * settings.c
  *
  * Created: 14.03.2019 23:40:57
  *  Author: Karol
  */ 
 
-#include "config.h"
+#include "settings.h"
 #include <avr/eeprom.h>
 
 #define WIFI_CONF_BUFFER_SIZE 25

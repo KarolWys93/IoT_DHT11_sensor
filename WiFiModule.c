@@ -9,17 +9,18 @@
 #include "uart.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 //private variables
 static char wifi_cmdBuffer[64];
 
 
-WiFI_Status WiFi_reset(){
+WiFI_Status WiFi_reset(uint32_t timeout){
 	WiFI_Status status = WiFi_ERROR;
 	sendLine("AT+RST");
 	while(1){
-		readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000);
+		if(readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, timeout) == 0){break;}
 		if(strcmp(wifi_cmdBuffer, "ready") == 0){
 			status = WiFi_OK;
 			break;
@@ -38,7 +39,7 @@ WiFI_Status WiFi_SetNetwork(char* SSID, char* password){
 	strcat(wifi_cmdBuffer, "\"");
 
 	sendLine(wifi_cmdBuffer);
-	readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer/sizeof *wifi_cmdBuffer, 10000);
+	if(readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer/sizeof *wifi_cmdBuffer, 10000) == 0){return status;};
 	
 	if (strcmp(wifi_cmdBuffer, "OK") == 0)
 	{
@@ -54,7 +55,9 @@ WiFI_Status WiFi_checkAPconnection(){
 
 	sendLine("AT+CWJAP?");
 	do{
-		readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000);
+		if(readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000) == 0){
+			break;
+		}
 		if(strcmp(wifi_cmdBuffer, "OK") == 0){
 			waitForAnswer = false;
 			status = WiFi_OK;
@@ -79,7 +82,9 @@ WiFI_Status WiFi_openConnection(char* adress, uint16_t port){
 
 		sendLine(wifi_cmdBuffer);
 		do{
-			readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000);
+			if(readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000) == 0){
+				break;
+			}
 			if(strcmp(wifi_cmdBuffer, "OK") == 0){
 				waitForAnswer = false;
 				status = WiFi_OK;
@@ -107,7 +112,9 @@ WiFI_Status WiFi_closeConnection(){
 
 	sendLine("AT+CIPCLOSE");
 	do{
-		readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000);
+		if (readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000) == 0){
+			break;
+		}
 		if(strcmp(wifi_cmdBuffer, "OK") == 0){
 			waitForAnswer = false;
 			status = WiFi_OK;
@@ -133,7 +140,9 @@ WiFI_Status WiFi_sendData(char* data, uint16_t dataLength){
 		if(sign == '>'){
 			sendData(data, dataLength);
 			do{
-				readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000);	//TODO add timeout
+				if(readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000) == 0){//TODO add timeout
+					break;
+				}	
 				if(strcmp(wifi_cmdBuffer, "SEND OK") == 0){
 					waitForAnswer = false;
 					status = WiFi_OK;
@@ -151,6 +160,49 @@ WiFI_Status WiFi_sendData(char* data, uint16_t dataLength){
 	return status;
 }
 uint16_t WiFi_readData(char* data, uint16_t bufferLen, uint32_t timeout){
-	return 15;
+	const char newDataPattern[] = {'+', 'I', 'P', 'D', ','};
+	char lengthStr[5];
+	uint8_t charCount = 0;
+	bool headRecived = false;
+	uint16_t length = 0;
+	
+	uint32_t char_timeout = timeout/4;
+	
+	while(1){
+
+		//step 1: waiting for "+IPD,"
+		if(readChar(char_timeout) == newDataPattern[charCount++]){
+			if(charCount == 5){
+				charCount = 0;
+				headRecived = true;
+				break;
+			}
+		}else{
+			charCount = 0;
+		}
+	}
+
+	if(headRecived){//read number of bytes to receiving
+		while(1){
+			lengthStr[charCount] = readChar(char_timeout);
+
+			if(lengthStr[charCount] == ':'){
+				lengthStr[charCount] = '\0';
+				length = atoi(lengthStr);
+				break;
+			}
+
+			if (++charCount > 5){
+				return 0;
+			}
+		}
+
+		if(length > bufferLen)
+		length = bufferLen;
+		
+		readData(data, length, timeout);
+	}
+
+	return length;
 }
 
