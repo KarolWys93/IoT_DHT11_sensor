@@ -8,6 +8,7 @@
 
 #ifndef MQTT_CLIENT_H_
 #define MQTT_CLIENT_H_
+#include <avr/io.h>
 
 uint16_t MQTT_connectpacket(uint8_t* packet, char* user, char* pass);
 

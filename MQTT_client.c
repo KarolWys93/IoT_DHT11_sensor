@@ -7,6 +7,8 @@
 
 #include "MQTT_client.h"
 
+#include <string.h>
+
 #define MQTT_PROTOCOL_LEVEL		4
 
 #define MQTT_CTRL_CONNECT		0x1
@@ -38,13 +40,13 @@
 #define MQTT_CONN_WILLFLAG		0x04
 #define MQTT_CONN_CLEANSESSION	0x02
 
-#define DEFAULT_BUFFER_SIZE		200
-#define DEFAULT_TIMEOUT			10000
-#define DEFAULT_CRLF_COUNT		2
+//#define DEFAULT_BUFFER_SIZE		200
+//#define DEFAULT_TIMEOUT			10000
+//#define DEFAULT_CRLF_COUNT		2
 
 int16_t packet_id_counter = 0;
 
-char clientID[] ="";
+char clientID[] ="Potato-Ik0rDM";
 char will_topic[] = "";
 char will_payload[] ="";
 uint8_t will_qos = 1;
