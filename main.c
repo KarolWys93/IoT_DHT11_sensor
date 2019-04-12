@@ -22,65 +22,14 @@
 #include <stdio.h>
 
 static void init(void);
+static void work(void);
 static WiFI_Status changeWiFiConfig();
 
 int main(void){
-	
 	init();
 	config_mode();
-	
-	char recivedText[64];
-	char sendBuffor[64];
-	
-	WiFi_enable();
-	hw_sleep_ms(500);
-	WiFi_reset(5000);
-	hw_sleep_ms(5000);
-	if (isWiFiConfigChanged())
-	{
-		changeWiFiConfig();
-	}
-	
-	char host[65];
-	char topic[65];
-	getHost(host, 65);
-	getTopic(topic, 65);
-	
-	char result[32];
-	
-    while (1){
-		while(WiFi_checkAPconnection() != WiFi_OK){
-			hw_sleep_ms(5000);
-		}
-		
-		uint16_t len = MQTT_connectpacket((uint8_t *)sendBuffor, "", "");
-		while(WiFi_openConnection(host, getPort()) != WiFi_OK){
-			hw_sleep_ms(1000);
-			WiFi_closeConnection();
-			hw_sleep_ms(1000);
-		}
-		WiFi_sendData(sendBuffor, len);
-		
-		ATOMIC_BLOCK(ATOMIC_FORCEON)
-		{
-			DHT11_readData();
-		}
-		
-		sprintf(result, "%d.%d *C %d.%d hr [%%]",
-			DHT11_getTempInt(),
-			DHT11_getTempDeci(),
-			DHT11_getRHInt(),
-			DHT11_getRHDeci());
-			
-		len = MQTT_publishPacket((uint8_t *) sendBuffor, topic, result, 0);
-		hw_sleep_ms(1000);
-		WiFi_sendData(sendBuffor, len);
-		hw_sleep_ms(500);
-		WiFi_closeConnection();
-		hw_sleep_ms(1000*getPeriod());
-	}
+	work();
 }
-
 
 static void init(void){
 	SET(PORT, config_mode_button);
@@ -93,10 +42,62 @@ static void init(void){
 }
 
 static WiFI_Status changeWiFiConfig(){
-	char wifiName[25];
-	char wifiPass[25];
+	WiFiConfig wifiConfig;
+	getWiFiConfig(&wifiConfig);
+	return WiFi_SetNetwork(wifiConfig.ssid, wifiConfig.password);
+}
+
+static void startWiFi(){
+	WiFi_enable();
+	hw_sleep_ms(500);
+	WiFi_reset(5000);
+	if (isWiFiConfigChanged())
+	{
+		changeWiFiConfig();
+		hw_sleep_ms(5000);
+	}
+}
+
+static void work(void){
+	char recivedText[64];
+	char sendBuffor[64];
 	
-	getSSID(wifiName, 25);
-	getWiFiPassword(wifiPass, 25);
-	return WiFi_SetNetwork(wifiName, wifiPass);
+	startWiFi();
+	
+	MqttConfig mqttConfig;
+	getMQTTConfig(&mqttConfig);
+	
+	char result[32];
+	
+	while (1){
+		while(WiFi_checkAPconnection() != WiFi_OK){
+			hw_sleep_ms(5000);
+		}
+		
+		uint16_t len = MQTT_connectpacket((uint8_t *)sendBuffor, mqttConfig.mqtt_user, mqttConfig.mqtt_pass);
+		while(WiFi_openConnection(mqttConfig.host, mqttConfig.port) != WiFi_OK){
+			hw_sleep_ms(1000);
+			WiFi_closeConnection();
+			hw_sleep_ms(1000);
+		}
+		WiFi_sendData(sendBuffor, len);
+		
+		ATOMIC_BLOCK(ATOMIC_FORCEON)
+		{
+			DHT11_readData();
+		}
+		
+		sprintf(result, "%d.%d *C %d.%d hr [%%]",
+		DHT11_getTempInt(),
+		DHT11_getTempDeci(),
+		DHT11_getRHInt(),
+		DHT11_getRHDeci());
+		
+		len = MQTT_publishPacket((uint8_t *) sendBuffor, mqttConfig.topic, result, 0);
+		hw_sleep_ms(1000);
+		WiFi_sendData(sendBuffor, len);
+		hw_sleep_ms(500);
+		WiFi_closeConnection();
+		hw_sleep_ms(1000*getPeriod());
+	}
 }

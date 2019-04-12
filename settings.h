@@ -11,22 +11,39 @@
 
 #include <avr/io.h>
 
+#define WIFI_CONF_BUFFER_SIZE 25
+#define MQTT_CONF_BUFFER_SIZE 65
+#define MQTT_CREDENTIAL_BUFFER_SIZE 25
+
+typedef struct {
+	char host[MQTT_CONF_BUFFER_SIZE];
+	char topic[MQTT_CONF_BUFFER_SIZE];
+	char mqtt_user[MQTT_CREDENTIAL_BUFFER_SIZE];
+	char mqtt_pass[MQTT_CREDENTIAL_BUFFER_SIZE];
+	uint16_t port;
+} MqttConfig;
+
+typedef struct {
+	char ssid[WIFI_CONF_BUFFER_SIZE];
+	char password[WIFI_CONF_BUFFER_SIZE];
+} WiFiConfig;
+
 /* WIFI config */
 uint8_t isWiFiConfigChanged();
-void getWiFiPassword(char* passwordBuffer, uint8_t len);
-void getSSID(char* ssidBuffer, uint8_t len);
+
+void getWiFiConfig(WiFiConfig* config);
 
 void setWiFiPassword(char* passwordBuffer, uint8_t len);
 void setSSID(char* ssidBuffer, uint8_t len);
 
 /* connection settings */
-void getHost(char* hostNameBuffer, uint8_t len);
-uint16_t getPort();
-void getTopic(char* topicBuffer, uint8_t len);
+void getMQTTConfig(MqttConfig* config);
 
 void setHost(char* hostNameBuffer, uint8_t len);
 void setPort(uint16_t port);
 void setTopic(char* topicBuffer, uint8_t len);
+void setMqttUser(char* mqttUserBuffer, uint8_t len);
+void setMqttPass(char* mqttPassBuffer, uint8_t len);
 
 /* other settings */
 uint16_t getPeriod();

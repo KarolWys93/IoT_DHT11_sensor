@@ -15,6 +15,42 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+static void printConfig(void){
+		WiFiConfig wifiConfig;
+		MqttConfig mqttConfig;
+		getWiFiConfig(&wifiConfig);
+		getMQTTConfig(&mqttConfig);
+		char buffer[20];
+		memset(buffer, 0, 20);
+			
+		sendLine("Config mode");
+		sendLine("-----------");
+		
+		sendLine("SSID:");
+		sendLine(wifiConfig.ssid);
+
+		sendLine("Pass:");
+		sendLine("********");
+
+		sendLine("Host:");
+		sendLine(mqttConfig.host);
+
+		sprintf(buffer, "Port: %u", mqttConfig.port);
+		sendLine(buffer);
+
+		sendLine("Topic:");
+		sendLine(mqttConfig.topic);
+		
+		sendLine("MQTT_User:");
+		sendLine(mqttConfig.mqtt_user);
+		
+		sendLine("MQTT_Pass:");
+		sendLine("********");
+
+		sprintf(buffer, "Period: %u", getPeriod());
+		sendLine(buffer);
+}
+
 static void sendOK(void){
 	sendLine("ok");
 }
@@ -32,79 +68,68 @@ void config_mode(void){
 		return;
 	}
 	
-	char recivedText[64];
-	char resultText[64];
-	memset(recivedText, 0, 64);
-	memset(recivedText, 0, 64);
-	
-	sendLine("Config mode");
-	sendLine("-----------");
-	
-	sendLine("SSID:");
-	getSSID(resultText, sizeof resultText / sizeof *resultText);
-	sendLine(resultText);
-
-	sendLine("Pass:");
-	sendLine("********");
-
-	sendLine("Host:");
-	getHost(resultText, sizeof resultText / sizeof *resultText);
-	sendLine(resultText);
-
-	sprintf(resultText, "Port: %u", getPort());
-	sendLine(resultText);
-
-	sendLine("Topic:");
-	getTopic(resultText, sizeof resultText / sizeof *resultText);
-	sendLine(resultText);
-
-	sprintf(resultText, "Period: %u", getPeriod());
-	sendLine(resultText);
+	char textBuffer[64];
+	memset(textBuffer, 0, 64);
+	printConfig();
 	
 	 while (1)
 	 {
-		 readLine(recivedText, sizeof recivedText / sizeof *recivedText, 0);
-		 sendLine(recivedText);
+		 readLine(textBuffer, sizeof textBuffer / sizeof *textBuffer, 0);
+		 sendLine(textBuffer);
 		 
-		 if (strcmp(recivedText, "SSID") == 0)
+		 if (strcmp(textBuffer, "SSID") == 0)
 		 {
-			 getSetting(recivedText, sizeof recivedText / sizeof *recivedText);
-			 setSSID(recivedText, sizeof recivedText / sizeof *recivedText);
+			 getSetting(textBuffer, sizeof textBuffer / sizeof *textBuffer);
+			 setSSID(textBuffer, sizeof textBuffer / sizeof *textBuffer);
 			 sendOK();
 		 }
 		 
-		 if (strcmp(recivedText, "Pass") == 0)
+		 if (strcmp(textBuffer, "Pass") == 0)
 		 {
-			 getSetting(recivedText, sizeof recivedText / sizeof *recivedText);
-			 setWiFiPassword(recivedText, sizeof recivedText / sizeof *recivedText);
+			 getSetting(textBuffer, sizeof textBuffer / sizeof *textBuffer);
+			 setWiFiPassword(textBuffer, sizeof textBuffer / sizeof *textBuffer);
 			 sendOK();
 		 }
 		 
-		 if (strcmp(recivedText, "Host") == 0)
+		 if (strcmp(textBuffer, "Host") == 0)
 		 {
-			 getSetting(recivedText, sizeof recivedText / sizeof *recivedText);
-			 setHost(recivedText, sizeof recivedText / sizeof *recivedText);
+			 getSetting(textBuffer, sizeof textBuffer / sizeof *textBuffer);
+			 setHost(textBuffer, sizeof textBuffer / sizeof *textBuffer);
 			 sendOK();
 		 }
 		 
-		 if (strcmp(recivedText, "Port") == 0)
+		 if (strcmp(textBuffer, "Port") == 0)
 		 {
-			 getSetting(recivedText, sizeof recivedText / sizeof *recivedText);
-			 setPort(atoi(recivedText));
+			 getSetting(textBuffer, sizeof textBuffer / sizeof *textBuffer);
+			 setPort(atoi(textBuffer));
 			 sendOK();
 		 }
 		 
-		 if (strcmp(recivedText, "Topic") == 0)
+		 if (strcmp(textBuffer, "Topic") == 0)
 		 {
-			 getSetting(recivedText, sizeof recivedText / sizeof *recivedText);
-			 setTopic(recivedText, sizeof recivedText / sizeof *recivedText);
+			 getSetting(textBuffer, sizeof textBuffer / sizeof *textBuffer);
+			 setTopic(textBuffer, sizeof textBuffer / sizeof *textBuffer);
 			 sendOK();
 		 }
 		 
-		 if (strcmp(recivedText, "Period") == 0)
+		 if (strcmp(textBuffer, "MQTT_User") == 0)
 		 {
-			 getSetting(recivedText, sizeof recivedText / sizeof *recivedText);
-			 setPeriod(atoi(recivedText));
+			 getSetting(textBuffer, sizeof textBuffer / sizeof *textBuffer);
+			 setMqttUser(textBuffer, sizeof textBuffer / sizeof *textBuffer);
+			 sendOK();
+		 }
+				  
+		 if (strcmp(textBuffer, "MQTT_Pass") == 0)
+		 {
+			 getSetting(textBuffer, sizeof textBuffer / sizeof *textBuffer);
+			 setMqttPass(textBuffer, sizeof textBuffer / sizeof *textBuffer);
+			 sendOK();
+		 }
+		 
+		 if (strcmp(textBuffer, "Period") == 0)
+		 {
+			 getSetting(textBuffer, sizeof textBuffer / sizeof *textBuffer);
+			 setPeriod(atoi(textBuffer));
 			 sendOK();
 		 }
 	 }
