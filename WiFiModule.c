@@ -58,11 +58,11 @@ WiFI_Status WiFi_checkAPconnection(){
 		if(readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000) == 0){
 			break;
 		}
-		if(strcmp(wifi_cmdBuffer, "OK") == 0){
+		if(strcmp(wifi_cmdBuffer, "No AP") == 0){
+			waitForAnswer = false;
+		}else if (strcmp(wifi_cmdBuffer, "OK") == 0){
 			waitForAnswer = false;
 			status = WiFi_OK;
-		}else if(strcmp(wifi_cmdBuffer, "ERROR") == 0){
-			waitForAnswer = false;
 		}
 	}while(waitForAnswer);
 

@@ -22,13 +22,12 @@
 #include <stdio.h>
 
 static void init(void);
+static WiFI_Status changeWiFiConfig();
 
 int main(void){
 	
 	init();
 	config_mode();
-	
-	//TODO configuration change
 	
 	char recivedText[64];
 	char sendBuffor[64];
@@ -37,24 +36,10 @@ int main(void){
 	hw_sleep_ms(500);
 	WiFi_reset(5000);
 	hw_sleep_ms(5000);
-	//while(1){
-		//if(WiFi_checkAPconnection() == WiFi_OK){
-			//strcpy(resultText, "GET / HTTP/1.1\r\nHost: jakitydzien.pl\r\n\r\n");
-			//WiFI_Status conn_status = WiFi_openConnection("jakitydzien.pl", 80);
-			//if (conn_status != WiFi_OK)
-			//{
-				//sendLine("kupa2");
-			//}else{
-				//WiFi_sendData(resultText, strlen(resultText));
-				//WiFi_readData(recivedText, sizeof recivedText/sizeof *recivedText, 10000);
-				//WiFi_closeConnection();
-			//}
-		//}else{
-			//sendLine("kupa");
-		//}
-		//hw_sleep_ms(60000);
-	//}
-	
+	if (isWiFiConfigChanged())
+	{
+		changeWiFiConfig();
+	}
 	
 	char host[65];
 	char topic[65];
@@ -65,7 +50,7 @@ int main(void){
 	
     while (1){
 		while(WiFi_checkAPconnection() != WiFi_OK){
-			hw_sleep_ms(1000);
+			hw_sleep_ms(5000);
 		}
 		
 		uint16_t len = MQTT_connectpacket((uint8_t *)sendBuffor, "", "");
@@ -88,9 +73,9 @@ int main(void){
 			DHT11_getRHDeci());
 			
 		len = MQTT_publishPacket((uint8_t *) sendBuffor, topic, result, 0);
-		hw_sleep_ms(100);
+		hw_sleep_ms(1000);
 		WiFi_sendData(sendBuffor, len);
-		hw_sleep_ms(100);
+		hw_sleep_ms(500);
 		WiFi_closeConnection();
 		hw_sleep_ms(1000*getPeriod());
 	}
@@ -105,4 +90,13 @@ static void init(void){
 	WiFi_init();
 	WiFi_disable();
 	sei();
+}
+
+static WiFI_Status changeWiFiConfig(){
+	char wifiName[25];
+	char wifiPass[25];
+	
+	getSSID(wifiName, 25);
+	getWiFiPassword(wifiPass, 25);
+	return WiFi_SetNetwork(wifiName, wifiPass);
 }
