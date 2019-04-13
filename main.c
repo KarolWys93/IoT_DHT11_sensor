@@ -89,6 +89,32 @@ static void startWiFi(){
 	}
 }
 
+static void connectToServer(char* sendBuffer, char* recivedBuffer, MqttConfig* mqttConfig, char* deviceID){
+	uint16_t len = 0;
+	while(1){
+		while(WiFi_checkAPconnection() != WiFi_OK){
+			hw_sleep_ms(5000);
+		}
+		
+		len = MQTT_connectpacket((uint8_t *)sendBuffer, deviceID, mqttConfig->mqtt_user, mqttConfig->mqtt_pass);
+		
+		while(WiFi_openConnection(mqttConfig->host, mqttConfig->port) != WiFi_OK){
+			WiFi_closeConnection();
+			hw_sleep_ms(1000);
+		}
+	
+		WiFi_sendData(sendBuffer, len);
+		len = WiFi_readData(recivedBuffer, 64, 5000);
+		if (len > 0 && MQTT_getType((uint8_t*)recivedBuffer) == MQTT_CTRL_CONNECTACK &&	MQTT_connackReturnCode((uint8_t*)recivedBuffer) == 0)
+		{
+			return;
+		} else {
+			WiFi_closeConnection();
+			hw_sleep_ms(5000);
+		}
+	}
+}
+
 static void work(void){
 	char recivedText[64];
 	char sendBuffor[64];
@@ -104,17 +130,7 @@ static void work(void){
 	char result[32];
 	
 	while (1){
-		while(WiFi_checkAPconnection() != WiFi_OK){
-			hw_sleep_ms(5000);
-		}
-		
-		uint16_t len = MQTT_connectpacket((uint8_t *)sendBuffor, deviceID, mqttConfig.mqtt_user, mqttConfig.mqtt_pass);
-		while(WiFi_openConnection(mqttConfig.host, mqttConfig.port) != WiFi_OK){
-			hw_sleep_ms(1000);
-			WiFi_closeConnection();
-			hw_sleep_ms(1000);
-		}
-		WiFi_sendData(sendBuffor, len);
+		connectToServer(sendBuffor, recivedText, &mqttConfig, deviceID);
 		
 		ATOMIC_BLOCK(ATOMIC_FORCEON)
 		{
@@ -127,8 +143,7 @@ static void work(void){
 		DHT11_getRHInt(),
 		DHT11_getRHDeci());
 		
-		len = MQTT_publishPacket((uint8_t *) sendBuffor, mqttConfig.topic, result, 0, 1);
-		hw_sleep_ms(1000);
+		uint8_t len = MQTT_publishPacket((uint8_t *) sendBuffor, mqttConfig.topic, result, 0, 1);
 		WiFi_sendData(sendBuffor, len);
 		hw_sleep_ms(500);
 		WiFi_closeConnection();

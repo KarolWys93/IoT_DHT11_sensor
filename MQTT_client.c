@@ -9,37 +9,6 @@
 
 #include <string.h>
 
-#define MQTT_PROTOCOL_LEVEL		4
-
-#define MQTT_CTRL_CONNECT		0x1
-#define MQTT_CTRL_CONNECTACK	0x2
-#define MQTT_CTRL_PUBLISH		0x3
-#define MQTT_CTRL_PUBACK		0x4
-#define MQTT_CTRL_PUBREC		0x5
-#define MQTT_CTRL_PUBREL		0x6
-#define MQTT_CTRL_PUBCOMP		0x7
-#define MQTT_CTRL_SUBSCRIBE		0x8
-#define MQTT_CTRL_SUBACK		0x9
-#define MQTT_CTRL_UNSUBSCRIBE	0xA
-#define MQTT_CTRL_UNSUBACK		0xB
-#define MQTT_CTRL_PINGREQ		0xC
-#define MQTT_CTRL_PINGRESP		0xD
-#define MQTT_CTRL_DISCONNECT	0xE
-
-#define MQTT_QOS_1				0x1
-#define MQTT_QOS_0				0x0
-
-/* Adjust as necessary, in seconds */
-#define MQTT_CONN_KEEPALIVE		60
-
-#define MQTT_CONN_USERNAMEFLAG	0x80
-#define MQTT_CONN_PASSWORDFLAG	0x40
-#define MQTT_CONN_WILLRETAIN	0x20
-#define MQTT_CONN_WILLQOS_1		0x08
-#define MQTT_CONN_WILLQOS_2		0x18
-#define MQTT_CONN_WILLFLAG		0x04
-#define MQTT_CONN_CLEANSESSION	0x02
-
 int16_t packet_id_counter = 0;
 
 char will_topic[] = "";
@@ -177,11 +146,95 @@ uint16_t MQTT_subscribePacket(uint8_t *packet, const char *topic, uint8_t qos)
 	return _length;
 }
 
+uint16_t MQTT_pubackPacket(uint8_t *packet, uint16_t packetID){
+	uint8_t* _packet = packet;
+	
+	_packet[0] = (MQTT_CTRL_PUBACK << 4);
+	_packet[1] = 2;
+	_packet+=2;
+	_packet[0] = (packetID >> 8) & 0xFF;
+	_packet[1] = packetID & 0xFF;
+	_packet+=2;
+	return _packet - packet;
+}
+
 uint16_t MQTT_pingPacket(uint8_t *packet){
-	uint8_t*_packet = packet;
+	uint8_t* _packet = packet;
 	
 	_packet[0] = (MQTT_CTRL_PINGREQ << 4);
 	_packet[1] = 0;
 	_packet+=2;
 	return _packet - packet;
 }
+
+
+uint8_t MQTT_getType(uint8_t* message){
+	return message[0] >> 4;
+}
+
+uint16_t MQTT_getPacketID(uint8_t* message){
+	uint16_t packetID = 0;
+	uint8_t type = MQTT_getType(message);
+	if (type == MQTT_CTRL_PUBACK || type == MQTT_CTRL_SUBACK)
+	{
+		packetID = (message[2] << 8);
+		packetID = packetID | message[3];
+	}else if (type == MQTT_CTRL_PUBLISH)
+	{
+		uint8_t offset = 4 + MQTT_topicSize(message);
+		packetID = (message[offset] << 8);
+		packetID = packetID | message[offset+1];
+	}
+	return packetID;	
+}
+
+uint8_t* MQTT_getPayload(uint8_t* message){
+	uint8_t type = MQTT_getType(message);
+	if (type == MQTT_CTRL_PUBLISH)
+	{
+		return message + 6 + MQTT_topicSize(message);
+	} else if(type == MQTT_CTRL_SUBACK){
+		return message + 4;	
+	} else{
+		return 0;
+	}		
+}
+
+uint8_t MQTT_payloadSize(uint8_t* message){
+	uint8_t* payloadPtr = MQTT_getPayload(message);
+	uint8_t remainingLength = message[1];
+	if (remainingLength > 127){return 0;}
+
+	message += (2 + remainingLength);
+	return message - payloadPtr;
+}
+uint8_t MQTT_getHeaderFlags(uint8_t* message){
+	return message[0] & 0x0F;
+}
+
+uint8_t* MQTT_getTopic(uint8_t* message){
+	if (MQTT_getType(message) == MQTT_CTRL_PUBLISH)
+	{
+		return message + 4;
+	}else{
+		return 0;
+	}
+}
+
+uint8_t MQTT_topicSize(uint8_t* message){
+	if (MQTT_getType(message) == MQTT_CTRL_PUBLISH)
+	{
+		return message[3];	
+	}else{
+		return 0;
+	}
+}
+
+uint8_t MQTT_connackFlag(uint8_t* message){
+	return message[2] & 1;	
+}
+
+uint8_t MQTT_connackReturnCode(uint8_t* message){
+	return message[3];
+}
+
