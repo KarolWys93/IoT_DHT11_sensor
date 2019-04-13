@@ -141,18 +141,15 @@ WiFI_Status WiFi_sendData(char* data, uint16_t dataLength){
 		if(sign == '>'){
 			sendData(data, dataLength);
 			do{
-				if(readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000) == 0){//TODO add timeout
-					break;
-				}	
-				if(strcmp(wifi_cmdBuffer, "SEND OK") == 0){
-					waitForAnswer = false;
-					status = WiFi_OK;
+				if(readLine(wifi_cmdBuffer, sizeof wifi_cmdBuffer / sizeof *wifi_cmdBuffer, 10000) != 0){//TODO add timeout
+					if(strcmp(wifi_cmdBuffer, "SEND OK") == 0){
+						status = WiFi_OK;
+						waitForAnswer = false;
+					}
 				}else{
 					waitForAnswer = false;
 				}
 			}while(waitForAnswer);
-			status = WiFi_OK;
-			waitForAnswer = false;
 		}else if(sign == 'l' || sign == '\0'){
 			waitForAnswer = false;
 		}

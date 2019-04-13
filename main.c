@@ -145,7 +145,6 @@ static void work(void){
 		
 		uint8_t len = MQTT_publishPacket((uint8_t *) sendBuffor, mqttConfig.topic, result, 0, 1);
 		WiFi_sendData(sendBuffor, len);
-		hw_sleep_ms(500);
 		WiFi_closeConnection();
 		hw_sleep_ms(1000*getPeriod());
 	}
