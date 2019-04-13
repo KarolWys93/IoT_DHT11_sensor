@@ -14,7 +14,7 @@
 #include <stdbool.h>
 
 //private variables
-static char wifi_cmdBuffer[64];
+static char wifi_cmdBuffer[70];
 
 
 WiFI_Status WiFi_reset(uint32_t timeout){

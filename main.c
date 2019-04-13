@@ -5,6 +5,11 @@
  * Author : IoT-team
  */ 
 
+//buffers size
+#define RECIVED_BUFFER_SIZE 16
+#define SEND_BUFFER_SIZE 64
+
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/atomic.h>
@@ -51,17 +56,17 @@ static WiFI_Status changeWiFiConfig(){
 static void generateDeviceID(void){
 	if (!isDeviceIDok())
 	{
-		char buffor[32];
-		memset(buffor, 0, 32);
+		char buffer[32];
+		memset(buffer, 0, 32);
 		sendLine("AT+CIPSTAMAC?");
 		do{
-			readLine(buffor, 32, 5000);
-		}while(buffor[0] != '+' || buffor[2] != 'I');	//1 and 3 letter of +CIPSTAMAC:
+			readLine(buffer, 32, 5000);
+		}while(buffer[0] != '+' || buffer[2] != 'I');	//1 and 3 letter of +CIPSTAMAC:
 		
 		uint8_t mac_sum = 0;
-		for (uint8_t i = 0; i < strlen(buffor); i++)
+		for (uint8_t i = 0; i < strlen(buffer); i++)
 		{
-			mac_sum += buffor[i];
+			mac_sum += buffer[i];
 		}
 		setSeed(mac_sum);
 		for(uint8_t i = 0; i < DEVICE_ID_BUFFER_SIZE-2; i++)
@@ -70,10 +75,10 @@ static void generateDeviceID(void){
 			if (sign < 10) {sign+=48;}
 			else if(sign >= 10 && sign < 36) {sign+=55;}
 			else {sign+=61;}
-			buffor[i] = sign;
+			buffer[i] = sign;
 		}
-		buffor[DEVICE_ID_BUFFER_SIZE-1] = 0;
-		setDeviceID(buffor);
+		buffer[DEVICE_ID_BUFFER_SIZE-1] = 0;
+		setDeviceID(buffer);
 	}
 }
 
@@ -104,7 +109,7 @@ static void connectToServer(char* sendBuffer, char* recivedBuffer, MqttConfig* m
 		}
 	
 		WiFi_sendData(sendBuffer, len);
-		len = WiFi_readData(recivedBuffer, 64, 5000);
+		len = WiFi_readData(recivedBuffer, RECIVED_BUFFER_SIZE, 5000);
 		if (len > 0 && MQTT_getType((uint8_t*)recivedBuffer) == MQTT_CTRL_CONNECTACK &&	MQTT_connackReturnCode((uint8_t*)recivedBuffer) == 0)
 		{
 			return;
@@ -116,8 +121,9 @@ static void connectToServer(char* sendBuffer, char* recivedBuffer, MqttConfig* m
 }
 
 static void work(void){
-	char recivedText[64];
-	char sendBuffor[64];
+	char recivedText[RECIVED_BUFFER_SIZE];
+	char sendBuffor[SEND_BUFFER_SIZE];
+	char result[40];
 	
 	startWiFi();
 	
@@ -127,8 +133,6 @@ static void work(void){
 	char deviceID[DEVICE_ID_BUFFER_SIZE];
 	getDeviceID(deviceID);
 	
-	char result[32];
-	
 	while (1){
 		connectToServer(sendBuffor, recivedText, &mqttConfig, deviceID);
 		
@@ -136,12 +140,11 @@ static void work(void){
 		{
 			DHT11_readData();
 		}
-		
-		sprintf(result, "%d.%d *C %d.%d hr [%%]",
-		DHT11_getTempInt(),
-		DHT11_getTempDeci(),
-		DHT11_getRHInt(),
-		DHT11_getRHDeci());
+		sprintf(result, "{\"temp\": %d.%0d, \"humidity\": %d.%0d}",
+				DHT11_getTempInt(),
+				DHT11_getTempDeci(),
+				DHT11_getRHInt(),
+				DHT11_getRHDeci());
 		
 		uint8_t len = MQTT_publishPacket((uint8_t *) sendBuffor, mqttConfig.topic, result, 0, 1);
 		WiFi_sendData(sendBuffor, len);
