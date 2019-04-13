@@ -25,8 +25,8 @@
 inline void hw_delay_init(void){
 	//ustawienie licznika 0 na czêstotliwoœæ 1kHz
 	// f = fclk/(preskaler*OCR0)
-	OCR2 = 125; //przy F_CPU 4MHz -> 125;
-	TCCR2 |= (1<<WGM21) | (1<<CS21) | (1<<CS20);	//CTC mode, prescaler 32
+	OCR2 = 125; //przy F_CPU 8MHz -> 125;
+	TCCR2 |= (1<<WGM21) | (1<<CS22);	//CTC mode, prescaler 64
 	TIMSK |= (1<<OCIE2);
 }
 

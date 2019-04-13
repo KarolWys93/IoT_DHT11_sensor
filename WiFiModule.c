@@ -7,6 +7,7 @@
 
 #include "WiFiModule.h"
 #include "uart.h"
+#include "hw_delay.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -167,7 +168,7 @@ uint16_t WiFi_readData(char* data, uint16_t bufferLen, uint32_t timeout){
 	uint16_t length = 0;
 	
 	uint32_t char_timeout = timeout/4;
-	
+	uint32_t startTime = getCurrentTime();
 	while(1){
 
 		//step 1: waiting for "+IPD,"
@@ -179,6 +180,7 @@ uint16_t WiFi_readData(char* data, uint16_t bufferLen, uint32_t timeout){
 			}
 		}else{
 			charCount = 0;
+			if((getCurrentTime() - startTime) > timeout){break;}
 		}
 	}
 
