@@ -23,11 +23,16 @@ static void printConfig(void){
 		MqttConfig mqttConfig;
 		getWiFiConfig(&wifiConfig);
 		getMQTTConfig(&mqttConfig);
-		char buffer[20];
-		memset(buffer, 0, 20);
+		char buffer[16];
+		memset(buffer, 0, 16);
 			
 		sendLine("Config mode");
 		sendLine("===========");
+		
+		sendLine("Device ID:");
+		getDeviceID(buffer);
+		sendLine(buffer);
+		sendLineSeparator();
 		
 		sendLine("SSID:");
 		sendLine(wifiConfig.ssid);
@@ -79,10 +84,11 @@ void config_mode(void){
 		return;
 	}
 	
-	#define BUFFER_SIZE 64
+	printConfig();
+	
+	#define BUFFER_SIZE 67
 	char textBuffer[BUFFER_SIZE];
 	memset(textBuffer, 0, BUFFER_SIZE);
-	printConfig();
 	
 	 while (1)
 	 {

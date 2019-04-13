@@ -17,6 +17,7 @@
 #include "single_bit_io.h"
 #include "config_mode.h"
 #include "MQTT_client.h"
+#include "rand8bit.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -47,14 +48,44 @@ static WiFI_Status changeWiFiConfig(){
 	return WiFi_SetNetwork(wifiConfig.ssid, wifiConfig.password);
 }
 
+static void generateDeviceID(void){
+	if (!isDeviceIDok())
+	{
+		char buffor[32];
+		memset(buffor, 0, 32);
+		sendLine("AT+CIPSTAMAC?");
+		do{
+			readLine(buffor, 32, 5000);
+		}while(buffor[0] != '+' || buffor[2] != 'I');	//1 and 3 letter of +CIPSTAMAC:
+		
+		uint8_t mac_sum = 0;
+		for (uint8_t i = 0; i < strlen(buffor); i++)
+		{
+			mac_sum += buffor[i];
+		}
+		setSeed(mac_sum);
+		for(uint8_t i = 0; i < DEVICE_ID_BUFFER_SIZE-2; i++)
+		{
+			uint8_t sign = (generateRand())%62;
+			if (sign < 10) {sign+=48;}
+			else if(sign >= 10 && sign < 36) {sign+=55;}
+			else {sign+=61;}
+			buffor[i] = sign;
+		}
+		buffor[DEVICE_ID_BUFFER_SIZE-1] = 0;
+		setDeviceID(buffor);
+	}
+}
+
 static void startWiFi(){
 	WiFi_enable();
 	hw_sleep_ms(500);
 	WiFi_reset(5000);
+	generateDeviceID();
 	if (isWiFiConfigChanged())
 	{
 		changeWiFiConfig();
-		hw_sleep_ms(5000);
+		hw_sleep_ms(10000);
 	}
 }
 
@@ -67,6 +98,9 @@ static void work(void){
 	MqttConfig mqttConfig;
 	getMQTTConfig(&mqttConfig);
 	
+	char deviceID[DEVICE_ID_BUFFER_SIZE];
+	getDeviceID(deviceID);
+	
 	char result[32];
 	
 	while (1){
@@ -74,7 +108,7 @@ static void work(void){
 			hw_sleep_ms(5000);
 		}
 		
-		uint16_t len = MQTT_connectpacket((uint8_t *)sendBuffor, mqttConfig.mqtt_user, mqttConfig.mqtt_pass);
+		uint16_t len = MQTT_connectpacket((uint8_t *)sendBuffor, deviceID, mqttConfig.mqtt_user, mqttConfig.mqtt_pass);
 		while(WiFi_openConnection(mqttConfig.host, mqttConfig.port) != WiFi_OK){
 			hw_sleep_ms(1000);
 			WiFi_closeConnection();
@@ -93,7 +127,7 @@ static void work(void){
 		DHT11_getRHInt(),
 		DHT11_getRHDeci());
 		
-		len = MQTT_publishPacket((uint8_t *) sendBuffor, mqttConfig.topic, result, 0);
+		len = MQTT_publishPacket((uint8_t *) sendBuffor, mqttConfig.topic, result, 0, 1);
 		hw_sleep_ms(1000);
 		WiFi_sendData(sendBuffor, len);
 		hw_sleep_ms(500);

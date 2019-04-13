@@ -14,6 +14,7 @@
 #define WIFI_CONF_BUFFER_SIZE 25
 #define MQTT_CONF_BUFFER_SIZE 65
 #define MQTT_CREDENTIAL_BUFFER_SIZE 25
+#define DEVICE_ID_BUFFER_SIZE 9 
 
 typedef struct {
 	char host[MQTT_CONF_BUFFER_SIZE];
@@ -29,7 +30,7 @@ typedef struct {
 } WiFiConfig;
 
 /* WIFI config */
-uint8_t isWiFiConfigChanged();
+uint8_t isWiFiConfigChanged(void);
 
 void getWiFiConfig(WiFiConfig* config);
 
@@ -46,7 +47,11 @@ void setMqttUser(char* mqttUserBuffer, uint8_t len);
 void setMqttPass(char* mqttPassBuffer, uint8_t len);
 
 /* other settings */
-uint16_t getPeriod();
+uint16_t getPeriod(void);
 void setPeriod(uint16_t period);
+
+uint8_t isDeviceIDok(void);
+void setDeviceID(char* deviceID);
+void getDeviceID(char* deviceID);
 
 #endif /* SETTINGS_H_ */

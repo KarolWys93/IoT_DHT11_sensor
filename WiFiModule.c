@@ -137,7 +137,7 @@ WiFI_Status WiFi_sendData(char* data, uint16_t dataLength){
 	sendLine(wifi_cmdBuffer);
 
 	do{
-		sign = readChar(0);
+		sign = readChar(10000);
 		if(sign == '>'){
 			sendData(data, dataLength);
 			do{
@@ -153,7 +153,7 @@ WiFI_Status WiFi_sendData(char* data, uint16_t dataLength){
 			}while(waitForAnswer);
 			status = WiFi_OK;
 			waitForAnswer = false;
-		}else if(sign == 'l'){
+		}else if(sign == 'l' || sign == '\0'){
 			waitForAnswer = false;
 		}
 	}while(waitForAnswer);

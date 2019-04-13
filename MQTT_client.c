@@ -40,13 +40,8 @@
 #define MQTT_CONN_WILLFLAG		0x04
 #define MQTT_CONN_CLEANSESSION	0x02
 
-//#define DEFAULT_BUFFER_SIZE		200
-//#define DEFAULT_TIMEOUT			10000
-//#define DEFAULT_CRLF_COUNT		2
-
 int16_t packet_id_counter = 0;
 
-char clientID[] ="Potato-Ik0rDM";
 char will_topic[] = "";
 char will_payload[] ="";
 uint8_t will_qos = 1;
@@ -62,7 +57,7 @@ static uint8_t* AddStringToBuf(uint8_t *_buf, const char *_string)
 	return _buf + _length;
 }
 
-uint16_t MQTT_connectpacket(uint8_t* packet, char* user, char* pass)
+uint16_t MQTT_connectpacket(uint8_t* packet, char* clientID, char* user, char* pass)
 {
 	uint8_t*_packet = packet;
 	uint16_t _length;
@@ -120,8 +115,9 @@ uint16_t MQTT_connectpacket(uint8_t* packet, char* user, char* pass)
 	return _length;
 }
 
-uint16_t MQTT_publishPacket(uint8_t *packet, const char *topic, char *data, uint8_t qos)
+uint16_t MQTT_publishPacket(uint8_t *packet, const char *topic, char *data, uint8_t qos, uint8_t retain)
 {
+	if(retain != 0){retain = 1;}
 	uint8_t *_packet = packet;
 	uint16_t _length = 0;
 	uint16_t Datalen=strlen(data);
@@ -132,7 +128,7 @@ uint16_t MQTT_publishPacket(uint8_t *packet, const char *topic, char *data, uint
 		_length += 2;
 	}
 	_length += Datalen;
-	_packet[0] = MQTT_CTRL_PUBLISH << 4 | qos << 1;
+	_packet[0] = MQTT_CTRL_PUBLISH << 4 | qos << 1 | retain << 0;
 	_packet++;
 	do {
 		uint8_t encodedByte = _length % 128;
@@ -181,66 +177,11 @@ uint16_t MQTT_subscribePacket(uint8_t *packet, const char *topic, uint8_t qos)
 	return _length;
 }
 
-//int main()
-//{
-	//char buf[4];
-	//uint8_t _buffer[150];
-	//uint16_t len;
-	//
-	//#ifdef SUBSRCIBE_DEMO
-	//long KeepAliveTime;
-	////PWM_init();
-	//#endif
-//
-	//#ifdef PUBLISH_DEMO
-	////ADC_Init();
-	//#endif
-//
-	//while(1)
-	//{
-		//MQTT_ConnectToServer();
-		//len = MQTT_connectpacket(_buffer);
-		//sendPacket(_buffer, len);
-		//len = readPacket(_buffer, 1000);
-//
-		//#ifdef PUBLISH_DEMO
-		//while(TCPClient_connected())
-		//{
-			//memset(_buffer, 0, 150);
-			//memset(buf, 0, 4);
-			////itoa(((float)ADC_Read(0)/10.4), buf, 10);	/* Read ADC channel 0 and publish it in range 0-100 */
-			//len = MQTT_publishPacket(_buffer, "Nivya151/feeds/test", buf, 1);/* topic format: "username/feeds/aio_feed" e.g. "Nivya151/feeds/test" */
-			//sendPacket(_buffer, len);
-		//}
-		//TCPClient_Close();
-		//_delay_ms(1000);
-		//#endif
-		//
-		//#ifdef SUBSRCIBE_DEMO
-		//uint8_t valuePointer=0;
-		//memset(_buffer, 0, 150);
-		//len = MQTT_subscribePacket(_buffer, "Nivya151/feeds/test", 1);/* topic format: "username/feeds/aio_feed" e.g. "Nivya151/feeds/test" */
-		//sendPacket(_buffer, len);
-		//KeepAliveTime = (MQTT_CONN_KEEPALIVE * 1000L);
-		//while(KeepAliveTime > 0)		/* Read subscription packets till Alive time */
-		//{
-			//len = readPacket(_buffer, 1000);
-			//for (uint16_t i=0; i<len;i++)
-			//{
-				//for (uint8_t k = 0; k < 4; k++)/* here 4 is aio_feed char length e.g. aio_feed "test" has length of 4 char */
-				//buf[k] = _buffer[i + k];
-				//if (strstr(buf, AIO_FEED) != 0)
-				//{
-					//valuePointer = i + 4;
-					//OCR0 = 2.5 * StringToUint16(_buffer + valuePointer);
-					//i = len;
-				//}
-			//}
-			//_delay_ms(1);
-			//KeepAliveTime--;
-		//}
-		//if(TCPClient_connected()) TCPClient_Close();
-		//_delay_ms(1000);
-		//#endif
-	//}
-//}
+uint16_t MQTT_pingPacket(uint8_t *packet){
+	uint8_t*_packet = packet;
+	
+	_packet[0] = (MQTT_CTRL_PINGREQ << 4);
+	_packet[1] = 0;
+	_packet+=2;
+	return _packet - packet;
+}

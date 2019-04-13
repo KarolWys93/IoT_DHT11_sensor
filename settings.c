@@ -22,6 +22,9 @@ EEMEM uint16_t port_eeprom = 1883;
 
 EEMEM uint16_t period_eeprom = 2;
 
+EEMEM char device_id_eeprom[DEVICE_ID_BUFFER_SIZE] = "--------";
+EEMEM uint8_t device_id_ok_eeprom = 0;
+
 
 /* WIFI config */
 static void setConfigChanged(uint8_t value){
@@ -29,7 +32,7 @@ static void setConfigChanged(uint8_t value){
 }
 
 
-uint8_t isWiFiConfigChanged(){
+uint8_t isWiFiConfigChanged(void){
 	uint8_t isChanged = eeprom_read_byte(&configChange);
 	if (isChanged != 0)
 	{
@@ -103,13 +106,30 @@ void setMqttPass(char* mqttPassBuffer, uint8_t len){
 	if(len > MQTT_CREDENTIAL_BUFFER_SIZE){
 		len = MQTT_CREDENTIAL_BUFFER_SIZE;
 	}
-	eeprom_write_block(mqtt_pass_eeprom, mqtt_pass_eeprom, len);
+	eeprom_write_block(mqttPassBuffer, mqtt_pass_eeprom, len);
 }
 
 /* other settings */
-uint16_t getPeriod(){
+uint16_t getPeriod(void){
 	return eeprom_read_word(&period_eeprom);
 }
 void setPeriod(uint16_t period){
 	eeprom_write_word(&period_eeprom, period);
+}
+
+uint8_t isDeviceIDok(void){
+	return eeprom_read_byte(&device_id_ok_eeprom);
+}
+
+static void setDeviceIDok(uint8_t ok){
+	eeprom_write_byte(&device_id_ok_eeprom, ok);
+}
+
+void setDeviceID(char* deviceID){
+	eeprom_write_block(deviceID, device_id_eeprom, DEVICE_ID_BUFFER_SIZE);
+	setDeviceIDok(1);
+}
+
+void getDeviceID(char* deviceID){
+	eeprom_read_block(deviceID, device_id_eeprom, DEVICE_ID_BUFFER_SIZE);
 }
