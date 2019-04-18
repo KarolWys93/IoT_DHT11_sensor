@@ -52,8 +52,6 @@ uint16_t MQTT_pingPacket(uint8_t *packet);
 
 uint16_t MQTT_pubackPacket(uint8_t *packet, uint16_t packetID);
 
-uint16_t MQTT_pingPacket(uint8_t *packet);
-
 //message handling methods
 uint8_t MQTT_getType(uint8_t* message);
 uint16_t MQTT_getPacketID(uint8_t* message);
